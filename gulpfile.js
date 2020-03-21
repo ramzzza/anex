@@ -6,8 +6,10 @@ let gulp = require('gulp'),
   rename = require('gulp-rename'),
   del = require('del'),
   autoprefixer = require('gulp-autoprefixer'),
-  fileinclude = require('gulp-file-include')
-  
+  fileinclude = require('gulp-file-include'),
+  notify = require('gulp-notify'),
+  babel = require('gulp-babel');
+
 
 gulp.task('clean', async function () {
   del.sync('dist')
@@ -16,7 +18,11 @@ gulp.task('clean', async function () {
 gulp.task('scss', function () {
   return gulp.src('app/sass/**/*.sass')
     .pipe(sass({
-      outputStyle: 'extended'
+      outputStyle: 'compressed'
+    }))
+    .on("error", notify.onError({
+      message: "Error: <%= error.message %>",
+      title: "У вас SASS"
     }))
     .pipe(autoprefixer({
       overrideBrowserslist: ['last 8 versions']
@@ -30,20 +36,10 @@ gulp.task('scss', function () {
     }))
 });
 
-gulp.task('css', function () {
-  return gulp.src([
-      // 'node_modules/normalize.css/normalize.css',
-      'node_modules/slick-carousel/slick/slick.css',
-    ])
-    .pipe(concat('_libs.scss'))
-    .pipe(gulp.dest('app/sass'))
-    .pipe(browserSync.reload({
-      stream: true
-    }))
-});
+
 
 gulp.task('html', function () {
-  return gulp.src('app/index.html')
+  return gulp.src('app/*.html')
     .pipe(browserSync.reload({
       stream: true
     }))
@@ -91,14 +87,17 @@ gulp.task('browser-sync', function () {
   });
 });
 
-gulp.task('export', function () {
-  let buildHtml = gulp.src('app/**/*.html')
+gulp.task('export', async function () {
+  let buildHtml = gulp.src('app/*.html')
     .pipe(gulp.dest('dist'));
 
   let BuildCss = gulp.src('app/css/**/*.css')
     .pipe(gulp.dest('dist/css'));
 
   let BuildJs = gulp.src('app/js/**/*.js')
+  .pipe(babel({
+    presets: ['@babel/env']
+}))
     .pipe(gulp.dest('dist/js'));
 
   let BuildFonts = gulp.src('app/fonts/**/*.*')
@@ -114,6 +113,17 @@ gulp.task('watch', function () {
   gulp.watch('app/html/*.html', gulp.parallel('fileinclude'))
   gulp.watch('app/js/*.js', gulp.parallel('script'))
 });
+
+
+
+
+
+
+
+
+
+
+
 
 gulp.task('build', gulp.series('clean', 'export'))
 
